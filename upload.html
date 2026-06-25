@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>🚀 Link New Project - aksess.com</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --itchio_white_back: #141414; --itchio_link_color: #fa5c5c; }
+        body { background-color: var(--itchio_white_back); color: white; font-family: Lato, sans-serif; margin: 0; }
+        .inner_column { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        .base_widget { background: #1b1b1b; padding: 30px; border-radius: 8px; border: 1px solid #333; }
+        .input_row { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #888; font-weight: bold; font-size: 14px; }
+        input, textarea { width: 100%; background: #111; border: 1px solid #444; padding: 12px; color: white; border-radius: 4px; box-sizing: border-box; }
+        .button.fat { background: #fa5c5c; color: white; border: none; padding: 15px; width: 100%; border-radius: 4px; font-weight: 900; cursor: pointer; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="inner_column">
+        <div class="base_widget">
+            <h2 style="color: #fa5c5c; margin-top: 0;">🚀 Link New Project</h2>
+            <form id="uploadForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div class="input_row">
+                            <label>Project Title</label>
+                            <input type="text" id="title" required placeholder="Mon Super Jeu">
+                        </div>
+                        <div class="input_row">
+                            <label>Slug (Nom du dossier dans /games/)</label>
+                            <input type="text" id="slug" required placeholder="mon-super-jeu">
+                        </div>
+                        <div class="input_row">
+                            <label>Short Tagline</label>
+                            <input type="text" id="short_text" placeholder="Action, RPG, WebGL...">
+                        </div>
+                    </div>
+                    <div>
+						<div class="input_row">
+							<label class="label">Genre</label>
+							<select id="genre" style="width:100%; background:#111; color:white; border:1px solid #444; padding:12px; border-radius:4px;">
+								<option value="Action">Action</option>
+								<option value="Aventure">Aventure</option>
+								<option value="RPG">RPG</option>
+								<option value="Puzzle">Puzzle</option>
+								<option value="Plateforme">Plateforme</option>
+								<option value="Autre">Autre</option>
+							</select>
+						</div>
+                        <div class="input_row">
+                            <label>Cover Image</label>
+                            <input type="file" id="coverFile" accept="image/*" required>
+                        </div>
+                        <div class="input_row">
+                            <label>Price ($)</label>
+                            <input type="number" id="price" value="0.00" step="0.01">
+                        </div>
+                        <div class="input_row">
+                            <label>Description</label>
+                            <textarea id="description" style="height: 100px;"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" id="btn" class="button fat">SAVE PROJECT TO DATABASE</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { SUPABASE_URL, SUPABASE_KEY, CLOUDINARY_URL, CLOUDINARY_PRESET } from './js/config.js';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 1. Vérification immédiate de l'accès Admin
+        async function checkAdminAccess() {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            // Vérification dans la table 'admins' (plus sécurisé que l'email en dur)
+            const { data: adminData, error } = await supabase
+                .from('admins')
+                .select('user_id')
+                .eq('user_id', user.id)
+                .single();
+
+            if (error || !adminData) {
+                alert("Accès refusé : vous n'êtes pas administrateur.");
+                window.location.href = "index.html";
+            }
+        }
+        
+        // Exécuter la vérification
+        checkAdminAccess();
+
+        // 2. Gestion de l'envoi du formulaire
+        document.getElementById('uploadForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn');
+            btn.disabled = true;
+            btn.innerText = "Uploading...";
+
+            try {
+                // A. Image vers Cloudinary
+                const file = document.getElementById('coverFile').files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', CLOUDINARY_PRESET);
+
+                const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+                const json = await res.json();
+                if(!json.secure_url) throw new Error("Image upload failed");
+
+                // B. Data vers Supabase
+                const { error } = await supabase.from('games').insert([{
+					title: document.getElementById('title').value,
+					slug: document.getElementById('slug').value.toLowerCase().trim().replace(/\s+/g, '-'),
+					description: document.getElementById('description').value,
+					short_text: document.getElementById('short_text').value,
+					genre: document.getElementById('genre').value, // AJOUTÉ ICI
+					price: parseFloat(document.getElementById('price').value),
+					cover_image: json.secure_url
+				}]);
+
+                if(error) throw error;
+                alert("Réussi ! N'oubliez pas de pousser votre dossier de jeu dans le dossier /games/ sur GitHub.");
+                window.location.href = "index.html";
+            } catch (err) {
+                alert(err.message);
+                btn.disabled = false;
+                btn.innerText = "SAVE PROJECT";
+            }
+        };
+    </script>
+</body>
+</html>
