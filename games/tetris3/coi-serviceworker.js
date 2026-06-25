@@ -19,8 +19,7 @@ if (typeof window === 'undefined') {
         const r = event.request;
 
         // --- CORRECTIF 1 : BYPASS TOTAL POUR PADDLE ET CLOUDFLARE BEACONS ---
-        // On ne touche absolument pas à ces requêtes pour éviter les erreurs CORS et 204
-        if (r.url.includes("cdn-cgi/rum") || r.url.includes("supabase.co")) {
+        if (r.url.includes("cdn-cgi/rum") || r.url.includes("supabase.co") || url.includes("paddle.com")) {
             return; 
         }
 
