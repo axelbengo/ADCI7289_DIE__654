@@ -63,7 +63,7 @@ export const GameSync = {
 		);
 		// PROGRAMME l'envoi vers le Cloud automatiquement
 		this.scheduleSync(gameSlug);
-	}
+	},
 
     async sync(gameSlug) {
 		try {
