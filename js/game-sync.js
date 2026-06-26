@@ -3,7 +3,6 @@ import { supabaseClient } from "./config.js?v=1.0.2";
 let syncTimer = null;
 let syncRunning = false;
 let syncQueued = false;
-let lastSyncedVersion = -1;
 
 export const GameSync = {
 
@@ -47,10 +46,6 @@ export const GameSync = {
 			// Rien dans le cloud
 			if (!remoteData) {
 
-				if (localData) {
-					lastSyncedVersion = localData.save_version ?? 0;
-				}
-
 				return localData;
 			}
 
@@ -62,7 +57,6 @@ export const GameSync = {
 					JSON.stringify(remoteData)
 				);
 
-				lastSyncedVersion = remoteData.save_version ?? 0;
 
 				return remoteData;
 			}
@@ -78,8 +72,6 @@ export const GameSync = {
 
 				console.log("📱 Sauvegarde locale plus récente.");
 
-				lastSyncedVersion = remoteVersion;
-
 				return localData;
 
 			}
@@ -93,7 +85,6 @@ export const GameSync = {
 					JSON.stringify(remoteData)
 				);
 
-				lastSyncedVersion = remoteVersion;
 
 				return remoteData;
 
@@ -105,7 +96,6 @@ export const GameSync = {
 
 			if (localTime >= remoteTime) {
 
-				lastSyncedVersion = localVersion;
 
 				return localData;
 
@@ -116,7 +106,6 @@ export const GameSync = {
 				JSON.stringify(remoteData)
 			);
 
-			lastSyncedVersion = remoteVersion;
 
 			return remoteData;
 
@@ -188,11 +177,6 @@ export const GameSync = {
 
 			const localVersion = localData.save_version ?? 0;
 
-			// Rien n'a changé depuis la dernière synchronisation
-			if (localVersion === lastSyncedVersion) {
-				window.on_sync_finished?.("OK");
-				return;
-			}
 
 			// Lecture de la sauvegarde cloud actuelle
 			const { data: remoteRow, error: readError } = await supabaseClient
@@ -218,7 +202,6 @@ export const GameSync = {
 					JSON.stringify(remoteData)
 				);
 
-				lastSyncedVersion = remoteVersion;
 
 				window.on_sync_finished?.("OK");
 
@@ -240,7 +223,6 @@ export const GameSync = {
 						JSON.stringify(remoteData)
 					);
 
-					lastSyncedVersion = remoteVersion;
 
 					window.on_sync_finished?.("OK");
 
@@ -265,8 +247,6 @@ export const GameSync = {
 
 			if (upsertError)
 				throw upsertError;
-
-			lastSyncedVersion = localVersion;
 
 			console.log("☁️ Synchronisation Cloud OK");
 
