@@ -356,6 +356,16 @@ const engine = new Engine(GODOT_CONFIG);
 					console.error(e);
 				}
 			};
+			
+			//Supression de données cloud
+			window.requestDataDelete = async function() {
+				const result = await GameSync.deleteData(slug);
+				
+				if (window.on_data_deleted) {
+					window.on_data_received("null"); // On informe le chargeur que les données sont maintenant nulles
+					window.on_data_deleted(result);
+				}
+			};
 
 			// SYNCHRONISATION CLOUD (Appelé par SaveManager.force_cloud_sync)
 			window.syncCloud = async function() {

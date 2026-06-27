@@ -64,6 +64,32 @@ export const GameSync = {
 		// PROGRAMME l'envoi vers le Cloud automatiquement
 		this.scheduleSync(gameSlug);
 	},
+	
+	async deleteData(gameSlug) {
+		try {
+			const { data: { user } } = await supabaseClient.auth.getUser();
+			
+			// 1. Supprimer du LocalStorage (Navigateur)
+			localStorage.removeItem(`save_${gameSlug}`);
+
+			if (user) {
+				// 2. Supprimer de Supabase (Cloud)
+				const { error } = await supabaseClient
+					.from('user_game_data')
+					.delete()
+					.eq('user_id', user.id)
+					.eq('game_slug', gameSlug);
+
+				if (error) throw error;
+			}
+			
+			console.log(`🗑️ Données supprimées pour ${gameSlug}`);
+			return "OK";
+		} catch (err) {
+			console.error("❌ Erreur suppression :", err.message);
+			return "ERROR";
+		}
+	},
 
     async sync(gameSlug) {
 		try {
