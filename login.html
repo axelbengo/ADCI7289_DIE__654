@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+    <title>Log in - aksess.com</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --itchio_white_back: #141414;
+            --itchio_gray_back: #1f1f1f;
+            --itchio_body_color: #e2e2e2;
+            --itchio_border_color: #333333;
+            --itchio_link_color: #fa5c5c;
+        }
+        body { background-color: var(--itchio_white_back); color: var(--itchio_body_color); margin: 0; font-family: Lato, sans-serif; }
+        
+        /* HEADER STYLE */
+        .primary_header {
+            background-color: #1b1b1b;
+            border-bottom: 1px solid var(--itchio_border_color);
+            display: flex; align-items: center; height: 50px; padding: 0 20px;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+        }
+        .header_spacer { height: 50px; }
+        .header_logo { color: #fa5c5c; text-decoration: none; font-weight: 900; font-size: 22px; }
+
+        /* FORM STYLE */
+        .main { padding-top: 50px; }
+        .inner_column.compressed_column { max-width: 400px; margin: 0 auto; padding: 20px; }
+        .base_widget { background: #1b1b1b; border: 1px solid #333; border-radius: 4px; padding: 25px; }
+        
+        .stat_header_widget h2 { margin-top: 0; font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+        
+        .input_row { margin-bottom: 15px; }
+        .label { display: block; margin-bottom: 5px; font-weight: bold; color: #888; font-size: 14px; }
+        input { 
+            width: 100%; background: #111; border: 1px solid #444; padding: 10px; 
+            color: white; border-radius: 3px; box-sizing: border-box; 
+        }
+        input:focus { border-color: #fa5c5c; outline: none; }
+        
+        .button { 
+            background: #fa5c5c; color: white; border: none; padding: 12px; 
+            border-radius: 3px; font-weight: bold; cursor: pointer; width: 100%; 
+            font-size: 16px; transition: background 0.2s;
+        }
+        .button:hover { background: #ff6b6b; }
+
+        #error-msg { 
+            color: #fa5c5c; background: rgba(250,92,92,0.1); padding: 10px; 
+            border-radius: 4px; display: none; margin-bottom: 20px; font-size: 14px;
+            border: 1px solid rgba(250,92,92,0.2);
+        }
+
+        .footer_links { text-align: center; margin-top: 20px; font-size: 14px; color: #777; }
+        .footer_links a { color: #fa5c5c; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="header_spacer"></div>
+    <div class="header_widget">
+        <div class="primary_header">
+            <a class="header_logo" href="index.html">aksess.com</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="inner_column compressed_column">
+            <div class="user_login_page base_widget">
+                <div class="stat_header_widget"><h2>Log in to aksess.com</h2></div>
+                <div class="padded">
+                    <!-- Zone d'affichage des erreurs -->
+                    <p id="error-msg"></p>
+
+                    <form id="loginForm">
+                        <div class="input_row">
+                            <label class="label">Email</label>
+                            <input type="email" id="email" required placeholder="votre@email.com">
+                        </div>
+                        <div class="input_row">
+                            <label class="label">Password</label>
+                            <input type="password" id="password" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" id="submit-btn" class="button">Log in</button>
+                    </form>
+
+                    <div class="footer_links">
+                        Pas encore de compte ? <a href="register.html">Create account</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { SUPABASE_URL, SUPABASE_KEY } from './js/config.js';
+        
+        // Initialisation Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const loginForm = document.getElementById('loginForm');
+        const errorMsg = document.getElementById('error-msg');
+        const submitBtn = document.getElementById('submit-btn');
+
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            // UI : Désactiver le bouton pendant le chargement
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Connexion...";
+            errorMsg.style.display = 'none';
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Appel Supabase Auth
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                // Affichage de l'erreur
+                errorMsg.innerText = "Erreur : " + error.message;
+                errorMsg.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Log in";
+            } else {
+                // Succès : Redirection vers l'accueil
+                window.location.href = "index.html";
+            }
+        };
+
+        // Rediriger si l'utilisateur est déjà connecté
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = "index.html";
+            }
+        }
+        checkSession();
+    </script>
+</body>
+</html>

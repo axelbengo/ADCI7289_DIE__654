@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+    <title>S'inscrire - aksess.com</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --itchio_white_back: #141414; --itchio_body_color: #e2e2e2; --itchio_link_color: #fa5c5c; }
+        body { background-color: var(--itchio_white_back); color: var(--itchio_body_color); margin: 0; font-family: Lato, sans-serif; }
+        .header_spacer { height: 50px; }
+        .primary_header { background-color: #1b1b1b; border-bottom: 1px solid #333; display: flex; align-items: center; height: 50px; padding: 0 20px; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+        .header_logo { color: #fa5c5c; text-decoration: none; font-weight: 900; font-size: 22px; }
+        .base_widget { background: #1b1b1b; border: 1px solid #333; border-radius: 4px; padding: 20px; margin-top: 20px; }
+        .inner_column.compressed_column { max-width: 400px; margin: 0 auto; }
+        .input_row { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #888; }
+        input { width: 100%; background: #111; border: 1px solid #444; padding: 10px; color: white; border-radius: 3px; box-sizing: border-box; }
+        .button { background: #fa5c5c; color: white; border: none; padding: 12px; border-radius: 3px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        #error-msg { color: #fa5c5c; background: rgba(250,92,92,0.1); padding: 10px; border-radius: 4px; display: none; margin-bottom: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="header_spacer"></div>
+    <div class="primary_header"><a class="header_logo" href="index.html">aksess.com</a></div>
+
+    <div class="main">
+        <div class="inner_column compressed_column">
+            <div class="user_register_page base_widget">
+                <div class="stat_header_widget"><h2>Create an account</h2></div>
+                <div class="padded">
+                    <p id="error-msg"></p>
+                    <form id="registerForm">
+                        <div class="input_row">
+                           <label>Username</label>
+                           <input type="text" id="username" required>
+                        </div>
+                        <div class="input_row">
+                           <label>Email</label>
+                           <input type="email" id="email" required>
+                        </div>
+                        <div class="input_row">
+                           <label>Password</label>
+                           <input type="password" id="password" required minlength="6">
+                        </div>
+                        <button type="submit" class="button">Create account</button>
+                    </form>
+                    <p style="text-align: center; margin-top: 15px; font-size: 13px;">
+                        Déjà un compte ? <a href="login.html" style="color: #fa5c5c;">Se connecter</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { SUPABASE_URL, SUPABASE_KEY } from './js/config.js';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: { data: { display_name: username } }
+            });
+
+            if (error) {
+                errorMsg.innerText = error.message;
+                errorMsg.style.display = 'block';
+            } else {
+                alert("Compte créé ! Connectez-vous maintenant.");
+                window.location.href = "login.html";
+            }
+        };
+    </script>
+</body>
+</html>
