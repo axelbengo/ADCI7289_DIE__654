@@ -1,6 +1,7 @@
 import { supabaseClient, SAVE_SALT } from "./config.js";
 
 let syncTimer = null;
+let isSyncDisabled = false;
 
 // Fonction interne pour générer une signature
 async function generateSignature(dataString) {
@@ -117,6 +118,8 @@ export const GameSync = {
 	},
 
     async sync(gameSlug) {
+		if (isSyncDisabled) return;
+		
 		try {
 			// 1. Vérifier si l'utilisateur est connecté
 			const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
@@ -149,6 +152,8 @@ export const GameSync = {
 				// Si l'erreur est une 403 (triche détectée), on prévient Godot
 				if (error.status === 403) {
 					console.error("🚨 Synchro refusée par le serveur (Triche ?)");
+					isSyncDisabled = true; // ON COUPE LE COURANT
+					window.on_sync_finished?.("FORBIDDEN"); // On prévient Godot
 				}
 				throw error;
 			}
