@@ -65,6 +65,8 @@ export const GameSync = {
     },
 	
 	async scheduleSync(gameSlug) {
+		if(isSyncDisabled)
+			return;
 		// 1. Annuler le décompte précédent s'il existe
 		if (syncTimer) clearTimeout(syncTimer);
 
@@ -151,10 +153,15 @@ export const GameSync = {
 			if (error) {
 				// Si l'erreur est une 403 (triche détectée), on prévient Godot
 				if (error.status === 403) {
-					console.error("🚨 Synchro refusée par le serveur (Triche ?)");
-					isSyncDisabled = true; // ON COUPE LE COURANT
-					window.on_sync_finished?.("FORBIDDEN"); // On prévient Godot
-				}
+                    console.error("🚨 FUSIBLE SAUTÉ : Le serveur a rejeté la sauvegarde définitivement.");
+                    isSyncDisabled = true; // ON COUPE LE COURANT
+                    if (syncTimer) {
+						clearTimeout(syncTimer);
+						syncTimer = null;
+					}
+                    window.on_sync_finished?.("FORBIDDEN"); // On prévient Godot
+                    return;
+                }
 				throw error;
 			}
 			console.log("☁️ Sauvegarde Cloud réussie.");
