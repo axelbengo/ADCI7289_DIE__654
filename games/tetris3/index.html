@@ -170,11 +170,11 @@ body {
 				<h2>Navigateur non supporté</h2>
 				<p>Désolé ! Votre navigateur actuel ne possède pas les technologies requises pour faire tourner ce jeu vidéo moderne.</p>
 				<p>Le jeu a besoin des éléments suivants :</p>
-				<ul>
-					<li><strong>WebGL 2.0</strong> (Accélération graphique)</li>
-					<li><strong>WebAssembly</strong> (Exécution du moteur de jeu)</li>
+				<ul id="missing-features-list" style="color: #ff453a; font-weight: bold; list-style-type: square;">
+					
 				</ul>
 				<p><strong>Comment régler cela ?</strong><br>
+				"Si SharedArrayBuffer est manquant, désactivez votre Adblocker ou VPN et rafraîchissez la page."<br>
 				Veuillez utiliser un navigateur moderne à jour (Chrome, Firefox, Edge, Opera) ou vérifier que le WebGL n'a pas été désactivé dans vos options de sécurité (comme sur LibreWolf).</p>
 			</div>
 		</div>
@@ -193,38 +193,7 @@ body {
 			<div id="status-notice"></div>
 		</div>
 		
-		<script>
-			(function() {
-				function checkCompatibility() {
-					// 1. Vérification de WebAssembly
-					const hasWasm = typeof WebAssembly === "object" && typeof WebAssembly.instantiate === "function";
-					
-					// 2. Vérification de WebGL2
-					let hasWebGL2 = false;
-					try {
-						const canvas = document.createElement("canvas");
-						hasWebGL2 = !!(window.WebGL2RenderingContext && canvas.getContext("webgl2"));
-					} catch (e) {
-						hasWebGL2 = false;
-					}
-
-					// Si l'un des deux échoue, on affiche le message et on bloque la suite
-					if (!hasWasm || !hasWebGL2) {
-						document.getElementById("error-browser-container").style.display = "flex";
-						
-						// Bloque l'exécution du moteur Godot en coupant les fonctions de démarrage si elles existent
-						if (window.window.stop) {
-							window.window.stop(); 
-						}
-						throw new Error("Game stopped: Browser compatibility check failed.");
-					}
-				}
-
-				// Exécution immédiate de la vérification
-				checkCompatibility();
-			})();
-
-		</script>
+		
 
 		<script src="index.js"></script>
 		<script>
@@ -268,6 +237,9 @@ const engine = new Engine(GODOT_CONFIG);
 
 	function displayFailureNotice(err) {
 		console.error(err);
+		const errorContainer = document.getElementById("error-browser-container");
+		if (errorContainer) errorContainer.style.display = "flex";
+		
 		if (err instanceof Error) {
 			setStatusNotice(err.message);
 		} else if (typeof err === 'string') {
@@ -284,6 +256,30 @@ const engine = new Engine(GODOT_CONFIG);
 	});
 
 	if (missing.length !== 0) {
+		// --- NOUVELLE LOGIQUE D'AFFICHAGE DÉTAILLÉ ---
+		const errorContainer = document.getElementById("error-browser-container");
+		const listContainer = document.getElementById("missing-features-list");
+		
+		if (errorContainer && listContainer) {
+			// On vide la liste au cas où
+			listContainer.innerHTML = "";
+			
+			// On ajoute chaque fonctionnalité manquante à la liste
+			missing.forEach(feature => {
+				const li = document.createElement("li");
+				// Traduction simple des termes techniques pour l'utilisateur
+				let text = feature;
+				if (feature === "SharedArrayBuffer") text = "Threads / SharedArrayBuffer (Isolation Cross-Origin)";
+				if (feature === "WebGL2") text = "WebGL 2.0 (Accélération Graphique)";
+				
+				li.innerText = text;
+				listContainer.appendChild(li);
+			});
+
+			errorContainer.style.display = "flex";
+		}
+		
+		
 		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
 			let serviceWorkerRegistrationPromise;
 			try {
