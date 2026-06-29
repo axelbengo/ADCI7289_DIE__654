@@ -3,21 +3,22 @@ import { supabaseClient, SAVE_SALT } from "./config.js";
 let syncTimer = null;
 let isSyncDisabled = false;
 
-// Fonction interne pour générer une signature
-async function generateSignature(dataString) {
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(SAVE_SALT);
-    const msgData = encoder.encode(dataString);
-    
-    const cryptoKey = await crypto.subtle.importKey(
-        "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-    );
-    
-    const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
-    return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
 
 export const GameSync = {
+	
+	// Fonction interne pour générer une signature
+	async function generateSignature(dataString) {
+		const encoder = new TextEncoder();
+		const keyData = encoder.encode(SAVE_SALT);
+		const msgData = encoder.encode(dataString);
+		
+		const cryptoKey = await crypto.subtle.importKey(
+			"raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+		);
+		
+		const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
+		return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, "0")).join("");
+	},
 
      async load(gameSlug) {
         try {
@@ -83,7 +84,7 @@ export const GameSync = {
         const dataString = JSON.stringify(newData);
         
         // On génère le sceau
-        const signature = await generateSignature(dataString);
+        const signature = await this.generateSignature(dataString);
         
         // On enregistre l'enveloppe complète
         const envelope = {
@@ -120,6 +121,19 @@ export const GameSync = {
 			return "ERROR";
 		}
 	},
+	
+	// À ajouter dans l'objet GameSync :
+	async verifyLocalSignature(gameSlug, envelope) {
+		if (!envelope || !envelope.signature || !envelope.payload) return false;
+		try {
+			const expected = await this.generateSignature(JSON.stringify(envelope.payload));
+			return envelope.signature === expected;
+		} catch (e) {
+			return false;
+		}
+	},
+
+// Assure-toi que generateSignature est accessible (en dehors de l'export ou en méthode interne)
 
     async sync(gameSlug) {
 		if (isSyncDisabled === true) return;
